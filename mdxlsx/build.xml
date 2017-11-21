@@ -1,0 +1,137 @@
+<?xml version="1.0"?>
+<project name="mdxls" default="dist" basedir=".">
+	<description>CSV to Excel</description>
+
+	<!-- ============ properties ================= -->
+	<property name="app.name" value="mdxls"/>
+	<property name="main-class" value="com.md.mdcms.xls.CSVtoXLS" />
+	<property name="build.debuglevel" value="lines,source"/>
+	<property name="src.dir" value="src" />
+	<property name="javadoc.dir" value="javadoc" />
+	<property name="lib.dir" value="lib" />
+	<property name="build.dir" value="build" />
+	<property name="dist.dir" value="dist" />
+	<property name="jarfile" value="${dist.dir}/${ant.project.name}.jar" />
+	<property name="deploy.remote.dir" value="Z:/ZEK/FLSCSCHQ" />
+
+	<!-- ============ target: setup-classpath ==== -->
+	<path id="classpath">
+		<fileset dir="${lib.dir}" includes="**/*.jar" />
+	</path>
+	<pathconvert property="class-path" pathsep=" " dirsep="\">
+		<path refid="classpath">
+		</path>
+		<map from="${basedir}\${lib.dir}\" to="${lib.dir}/" />
+	</pathconvert>
+
+	<!-- ============ target: help =============== -->
+	<target name="help">
+		<echo message="A list of possible targets: " />
+		<echo message="    clean..............Deletes build and dist directories" />
+		<echo message="    clean-build........Build a clean dist" />
+		<echo message="    compile............Compiles the project" />
+		<echo message="    deploy-remote......Remotely deploys the application" />
+		<echo message="    dist...............Creates the jar file" />
+		<echo message="    dist-packedjar.....Creates the jar file, packed together with all third-party libraries" />
+		<echo message="    doc................Creates the documentation for this project" />
+		<echo message="    help...............Prints this help text" />
+		<echo message="    init...............Initialization, create directories" />
+		<echo message="    run................Runs the application" />
+	</target>
+
+	<!-- ============ target: clean ============== -->
+	<target name="clean" description="clean up">
+		<!-- Delete the ${build} and ${dist} directory trees -->
+		<delete dir="${build.dir}" />
+		<delete dir="${dist.dir}" />
+	</target>
+
+	<!-- ============ target: clean-build ======== -->
+	<target name="clean-build" depends="clean,dist" />
+
+	<!-- ============ target: init =============== -->
+	<target name="init">
+		<!-- Create the time stamp -->
+		<tstamp />
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${build.dir}" />
+		<!-- Create the distribution directory -->
+		<mkdir dir="${dist.dir}" />
+		<mkdir dir="${dist.dir}/${lib.dir}" />
+	</target>
+
+	<!-- ============ target: compile ============ -->
+	<target name="compile" depends="init" description="compile the source ">
+		<!-- Compile the java code from ${src.dir} into ${build.dir} -->
+		<javac source="1.4" srcdir="${src.dir}" destdir="${build.dir}" debug="true" debuglevel="${build.debuglevel}"
+                   classpathref="classpath" />
+		<copy todir="${build.dir}">
+			<fileset dir="src" includes="**/*.properties" />
+		</copy>
+	</target>
+
+	<!-- ============ target: dist =============== -->
+	<target name="dist" depends="compile" description="generate the distribution">
+		<!-- Put everything in ${build.dir} into the zekclient.jar file -->
+		<jar jarfile="${jarfile}" basedir="${build.dir}">
+			<manifest>
+				<attribute name="Main-Class" value="${main-class}" />
+				<attribute name="Class-Path" value="${class-path}" />
+			</manifest>
+		</jar>
+		<copy todir="${dist.dir}/${lib.dir}">
+			<fileset dir="${lib.dir}">
+				<include name="*.jar" />
+			</fileset>
+		</copy>
+	</target>
+
+	<!-- ============ target: dist =============== -->
+	<target name="dist-packedjar" depends="compile" description="generate the distribution, all packed in one jar">
+		<!-- Put everything in ${build.dir} into the zekclient.jar file -->
+		<jar jarfile="${jarfile}" basedir="${build.dir}" filesetmanifest="mergewithoutmain">
+			<zipfileset src="${lib.dir}/axis.jar" />
+			<zipfileset src="${lib.dir}/axis-ant.jar" />
+			<zipfileset src="${lib.dir}/axis-schema.jar" />
+			<zipfileset src="${lib.dir}/commons-discovery-0.2.jar" />
+			<zipfileset src="${lib.dir}/commons-logging-1.0.4.jar" />
+			<zipfileset src="${lib.dir}/jaxrpc.jar" />
+			<zipfileset src="${lib.dir}/log4j-1.2.8.jar" />
+			<zipfileset src="${lib.dir}/saaj.jar" />
+			<zipfileset src="${lib.dir}/wsdl4j-1.5.1.jar" />
+			<zipfileset src="${lib.dir}/activation.jar" />
+			<zipfileset src="${lib.dir}/mail.jar" />
+			<manifest>
+				<attribute name="Main-Class" value="${main-class}" />
+			</manifest>
+		</jar>
+	</target>
+
+	<!-- ============ target: deploy-remote ========= -->
+	<target name="deploy-remote" depends="dist" description="deploy the web tester">
+		<copy verbose="true" todir="${deploy.remote.dir}">
+			<fileset dir="${dist.dir}" />
+		</copy>
+	</target>
+
+	<!-- ============ target: doc ================ -->
+	<target name="doc">
+		<delete dir="${javadoc.dir}" />
+		<mkdir dir="${javadoc.dir}" />
+		<javadoc
+			sourcepath="${src.dir}"
+			packagenames="com.csg.cs.zekclient"
+			destdir="${javadoc.dir}"
+			use="true"
+			author="true"
+			version="true" />
+	</target>
+
+	<!-- ============ target: run ================ -->
+	<target name="run" depends="dist">
+		<java jar="${dist.dir}/${ant.project.name}.jar" fork="true" />
+	</target>
+
+	<!-- ============ target: main =============== -->
+	<target name="main" depends="clean,run" />
+</project>
